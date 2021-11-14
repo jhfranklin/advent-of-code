@@ -1,0 +1,4 @@
+name = "AdventOfCode"
+uuid = "8b6d9278-1919-4fef-94e8-99198a0b367f"
+authors = ["Jack Franklin <jackhenryfranklin@gmail.com>"]
+version = "0.1.0"
