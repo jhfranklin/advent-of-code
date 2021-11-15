@@ -19,20 +19,28 @@ function getprogram(sample=false, input=1)
 end
 
 function nextstep!(intcode::Intcode)
-    opcode = intcode.program[intcode.pointer+1]
+    instruction = lpad(intcode.program[intcode.pointer+1], 5, '0')
+    opcode = parse(Int, instruction[4:5])
     numParams = numParamsByOpcode[opcode]
-    positions = intcode.program[intcode.pointer+2:intcode.pointer+1+numParams]
-    parameters = [intcode.program[x+1] for x in positions]
-    input_stream = intcode.input_stream
+    parameterTypes = parse.(Int, collect(reverse(instruction[4-numParams:3])))
+    paramInstructions = intcode.program[intcode.pointer+2:intcode.pointer+1+numParams]
+    parameters = copy(paramInstructions)
+    for i ∈ 1:numParams
+        if parameterTypes[i] == 0 # position mode
+            parameters[i] = intcode.program[parameters[i]+1]
+        elseif parameterTypes[i] == 1 # immediate mode
+            continue
+        end
+    end
     if opcode == 1 # x+y
         result = parameters[1] + parameters[2]
-        intcode.program[positions[3]+1] = result
+        intcode.program[paramInstructions[3]+1] = result
     elseif opcode == 2 # x*y
         result = parameters[1] * parameters[2]
-        intcode.program[positions[3]+1] = result
+        intcode.program[paramInstructions[3]+1] = result
     elseif opcode == 3 # input
         result = pop!(intcode.input_stream)
-        intcode.program[positions[1]+1] = result
+        intcode.program[paramInstructions[1]+1] = result
     elseif opcode == 4 # output
         push!(intcode.output_stream,parameters[1])
     elseif opcode == 99 # finish
@@ -41,9 +49,6 @@ function nextstep!(intcode::Intcode)
     intcode.pointer += numParams + 1
     return intcode.finished
 end
-
-x=getprogram(true)
-nextstep!(x)
 
 function executeprogram!(intcode)
     while !intcode.finished
@@ -54,9 +59,9 @@ end
 
 function part1()
     ic = getprogram()
-    return executeprogram!(ic)
+    outputs = executeprogram!(ic)
+    return pop!(outputs)
 end
 
-
-# println("part 1: ", part1())
+println("part 1: ", part1())
 # println("part 2: ", part2())
