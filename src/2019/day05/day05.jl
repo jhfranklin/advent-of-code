@@ -9,14 +9,14 @@ mutable struct Intcode
     Intcode(program::Vector{Int},input::Int) = new(program, 0, false, [input], [])
 end
 
-function getprogram(sample=false, input=1)
+function getprogram(input=1,sample=false)
     rawInput = readline(getinputpath(2019, 5, sample))
     data = parse.(Int,split(rawInput, ","))
     return Intcode(data, input)
 end
 
 function nextstep!(intcode::Intcode)
-    numParamsByOpcode = Dict(1 => 3, 2 => 3, 3 => 1, 4 => 1, 99 => 0)
+    numParamsByOpcode = Dict(1 => 3, 2 => 3, 3 => 1, 4 => 1, 5 => 2, 6 => 2, 7 => 3, 8 => 3, 99 => 0)
     instruction = lpad(intcode.program[intcode.pointer+1], 5, '0')
     opcode = parse(Int, instruction[4:5])
     numParams = numParamsByOpcode[opcode]
@@ -30,6 +30,7 @@ function nextstep!(intcode::Intcode)
             continue
         end
     end
+    intcode.pointer += numParams + 1
     if opcode == 1 # x+y
         result = parameters[1] + parameters[2]
         intcode.program[paramInstructions[3]+1] = result
@@ -41,10 +42,29 @@ function nextstep!(intcode::Intcode)
         intcode.program[paramInstructions[1]+1] = result
     elseif opcode == 4 # output
         push!(intcode.output_stream,parameters[1])
+    elseif opcode == 5 # jump-if-true
+        if parameters[1] != 0
+            intcode.pointer = parameters[2]
+        end
+    elseif opcode == 6 # jump-if-false
+        if parameters[1] == 0
+            intcode.pointer = parameters[2]
+        end
+    elseif opcode == 7 # less than
+        if parameters[1] < parameters[2]
+            intcode.program[paramInstructions[3]+1] = 1
+        else
+            intcode.program[paramInstructions[3]+1] = 0
+        end
+    elseif opcode == 8 # equals
+        if parameters[1] == parameters[2]
+            intcode.program[paramInstructions[3]+1] = 1
+        else
+            intcode.program[paramInstructions[3]+1] = 0
+        end
     elseif opcode == 99 # finish
         intcode.finished = true
     end
-    intcode.pointer += numParams + 1
     return intcode.finished
 end
 
@@ -56,10 +76,16 @@ function executeprogram!(intcode)
 end
 
 function part1()
-    ic = getprogram()
+    ic = getprogram(1)
+    outputs = executeprogram!(ic)
+    return pop!(outputs)
+end
+
+function part2()
+    ic = getprogram(5)
     outputs = executeprogram!(ic)
     return pop!(outputs)
 end
 
 println("part 1: ", part1())
-# println("part 2: ", part2())
+println("part 2: ", part2())
