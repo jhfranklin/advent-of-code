@@ -1,7 +1,4 @@
 using AdventOfCode
-
-numParamsByOpcode = Dict(1 => 3, 2 => 3, 3 => 1, 4 => 1, 99 => 0)
-
 mutable struct Intcode
     program::Vector{Int}
     pointer::Int
@@ -19,6 +16,7 @@ function getprogram(sample=false, input=1)
 end
 
 function nextstep!(intcode::Intcode)
+    numParamsByOpcode = Dict(1 => 3, 2 => 3, 3 => 1, 4 => 1, 99 => 0)
     instruction = lpad(intcode.program[intcode.pointer+1], 5, '0')
     opcode = parse(Int, instruction[4:5])
     numParams = numParamsByOpcode[opcode]
