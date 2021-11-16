@@ -100,11 +100,23 @@ function runamplifier(signal, phase)
 end
 
 function testsequence(phase_sequence)
-    signal = 0
-    for phase in phase_sequence
-        signal = runamplifier(signal, phase)[1]
+    # Initialise amplifiers
+    amplifiers = Vector{Intcode}(undef,5)
+    for i ∈ 1:5
+        amplifiers[i] = getprogram(phase_sequence[i])
     end
-    return signal
+    pushfirst!(amplifiers[1].input_stream, 0) # start signal
+    # Run amplifiers until all finished
+    current_execution = 1
+    while !all(finished.(amplifiers))
+        amp = amplifiers[mod1(current_execution, 5)]
+        executeprogram!(amp)
+        signal = pop!(amp.output_stream)
+        next_amp = amplifiers[mod1(1+current_execution, 5)]
+        pushfirst!(next_amp.input_stream, signal)
+        current_execution += 1
+    end
+    return pop!(amplifiers[1].input_stream) # signal has already been sent to A's input stream
 end
 
 function part1()
@@ -133,7 +145,6 @@ function test() # think the problem is the ordering in the input and output stre
     pushfirst!(amplifiers[1].input_stream, 0) # start signal
     current_execution = 1
     while !all(finished.(amplifiers))
-        println("iteration ", current_execution)
         amp = amplifiers[mod1(current_execution, 5)]
         executeprogram!(amp)
         signal = pop!(amp.output_stream)
@@ -167,5 +178,5 @@ end
 
 test()
 
-#println("part 1: ", part1())
+println("part 1: ", part1())
 # println("part 2: ", part2())
