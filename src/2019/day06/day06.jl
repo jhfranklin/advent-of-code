@@ -33,5 +33,34 @@ function part1()
     return num_orbits |> values |> sum
 end
 
+function getpath(parents, node)
+    current_path = [node]
+    found_root = false
+    while !found_root
+        current_node = current_path[end]
+        if haskey(parents, current_node)
+            push!(current_path, parents[current_node])
+        else
+            found_root = true
+        end
+    end
+    return current_path
+end
+
+function part2()
+    children, parents = getinput() |> orbitmap
+    you_path = getpath(parents, "YOU")
+    san_path = getpath(parents, "SAN")
+    # find first shared node
+    shared_node = ""
+    for node ∈ you_path
+        if node ∈ san_path
+            shared_node = node
+            break
+        end
+    end
+    return findfirst(you_path .== shared_node) + findfirst(san_path .== shared_node) - 4
+end
+
 println("part 1: ", part1())
-# println("part 2: ", part2())
+println("part 2: ", part2())
