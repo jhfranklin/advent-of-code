@@ -1,11 +1,4 @@
 using AdventOfCode
-
-directionDict = Dict(
-    :R => 1+0im,
-    :L => -1+0im,
-    :U => 0+1im,
-    :D => 0-1im
-)
 struct Instruction
     direction::Symbol
     length::Int
