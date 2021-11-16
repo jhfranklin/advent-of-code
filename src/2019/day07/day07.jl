@@ -93,12 +93,6 @@ function executeprogram!(intcode)
     return intcode.output_stream
 end
 
-function runamplifier(signal, phase)
-    input_stream = [signal, phase]
-    ic = getprogram(input_stream)
-    return executeprogram!(ic)
-end
-
 function testsequence(phase_sequence)
     # Initialise amplifiers
     amplifiers = Vector{Intcode}(undef,5)
@@ -119,15 +113,14 @@ function testsequence(phase_sequence)
     return pop!(amplifiers[1].input_stream) # signal has already been sent to A's input stream
 end
 
-function part1()
+function testphaserange(phase_range)
     # would prefer an approach with no for loops
-    possible_phases = 0:4
     max_signal = 0
-    for a ∈ possible_phases
-        for b ∈ setdiff(possible_phases, [a])
-            for c ∈ setdiff(possible_phases, [a,b])
-                for d ∈ setdiff(possible_phases, [a,b,c])
-                    e = setdiff(possible_phases, [a,b,c,d])[1]
+    for a ∈ phase_range
+        for b ∈ setdiff(phase_range, [a])
+            for c ∈ setdiff(phase_range, [a,b])
+                for d ∈ setdiff(phase_range, [a,b,c])
+                    e = setdiff(phase_range, [a,b,c,d])[1]
                     max_signal = max(max_signal,testsequence([a,b,c,d,e]))
                 end
             end
@@ -136,47 +129,5 @@ function part1()
     return max_signal
 end
 
-function test() # think the problem is the ordering in the input and output streams
-    phase_sequence = [9,8,7,6,5]
-    amplifiers = Vector{Intcode}(undef,5)
-    for i ∈ 1:5
-        amplifiers[i] = getprogram(phase_sequence[i], true)
-    end
-    pushfirst!(amplifiers[1].input_stream, 0) # start signal
-    current_execution = 1
-    while !all(finished.(amplifiers))
-        amp = amplifiers[mod1(current_execution, 5)]
-        executeprogram!(amp)
-        signal = pop!(amp.output_stream)
-        next_amp = amplifiers[mod1(1+current_execution, 5)]
-        pushfirst!(next_amp.input_stream, signal)
-        current_execution += 1
-    end
-end
-
-function part2()
-    # would prefer an approach with no for loops
-    possible_phases = 5:9
-    max_signal = 0
-    amplifiers = Vector{Intcode}(undef,5)
-    for i ∈ 1:5
-        amplifiers[i] = getprogram(phase_sequence[i], true)
-    end
-    pushfirst!(amplifiers[1].input_stream, 0) # start signal
-    for a ∈ possible_phases
-        for b ∈ setdiff(possible_phases, [a])
-            for c ∈ setdiff(possible_phases, [a,b])
-                for d ∈ setdiff(possible_phases, [a,b,c])
-                    e = setdiff(possible_phases, [a,b,c,d])[1]
-                    max_signal = max(max_signal,testsequence([a,b,c,d,e]))
-                end
-            end
-        end
-    end
-    return max_signal
-end
-
-test()
-
-println("part 1: ", part1())
-# println("part 2: ", part2())
+println("part 1: ", testphaserange(0:4))
+println("part 2: ", testphaserange(5:9))
