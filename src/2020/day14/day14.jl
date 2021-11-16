@@ -43,13 +43,13 @@ function part1(rawinput)
     rx = r"(\w+)\[?(\d*)\]? = (.+)"
     input = [match(rx, row) for row ∈ rawinput]
     memory = Dict{Int,Int}()
-    mask = (value) -> 1
+    current_mask = ""
     for row ∈ input
         (type, address, value) = row.captures
         if type == "mask"
-            mask(x) = applymask(x, value)
+            current_mask = value
         else
-            memory[parse(Int,address)] = mask(value)
+            memory[parse(Int,address)] = applymask(value, current_mask)
         end
     end
     return sum(values(memory))
@@ -59,13 +59,13 @@ function part2(rawinput)
     rx = r"(\w+)\[?(\d*)\]? = (.+)"
     input = [match(rx, row) for row ∈ rawinput]
     memory = Dict{Int,Int}()
-    mask = (value) -> 1
+    current_mask = ""
     for row ∈ input
         (type, address, value) = row.captures
         if type == "mask"
-            mask(x) = applymaskv2(x, value)
+            current_mask = value
         else
-            addresses = mask(address)
+            addresses = applymaskv2(address, current_mask)
             for a ∈ addresses
                 memory[a] = parse(Int, value)
             end
