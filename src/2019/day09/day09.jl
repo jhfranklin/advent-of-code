@@ -41,30 +41,45 @@ function getprogram(input_stream::Vector{Int},sample=false)
     return Intcode(data, input_stream)
 end
 
+function getmem(intcode::Intcode, parameter::Int, parameter_type::Int)
+    if parameter_type == 0 # position mode
+        return get!(intcode.program,parameter,0)
+    elseif parameter_type == 1 # immediate mode
+        return parameter
+    elseif parameter_type == 2 # relative mode
+        return get!(intcode.program,parameter+intcode.relative_base,0)
+    else # unknown
+        error("Unknown parameter type "+string(parameter_type))
+    end
+end
+
+function setmem!(intcode::Intcode, input::Int, parameter::Int, parameter_type::Int)
+    if parameter_type == 0 # position mode
+        intcode.program[parameter] = input
+    elseif parameter_type == 1 # immediate mode
+        error("Can't set memory using immediate mode")
+    elseif parameter_type == 2 # relative mode
+        intcode.program[parameter+intcode.relative_base] = input
+    else # unknown
+        error("Unknown parameter type "+string(parameter_type))
+    end
+    return true
+end
+
 function nextstep!(intcode::Intcode)
     numParamsByOpcode = Dict(1 => 3, 2 => 3, 3 => 1, 4 => 1, 5 => 2, 6 => 2, 7 => 3, 8 => 3, 9 => 1, 99 => 0)
-    instruction = lpad(get!(intcode.program,intcode.pointer,0), 5, '0')
+    instruction = lpad(getmem(intcode,intcode.pointer,0), 5, '0')
     opcode = parse(Int, instruction[4:5])
     numParams = numParamsByOpcode[opcode]
     parameterTypes = parse.(Int, collect(reverse(instruction[4-numParams:3])))
-    paramInstructions = [get!(intcode.program, x, 0) for x ∈ collect(intcode.pointer+1:intcode.pointer+numParams)]
-    parameters = copy(paramInstructions)
-    for i ∈ 1:numParams
-        if parameterTypes[i] == 0 # position mode
-            parameters[i] = get!(intcode.program,parameters[i],0)
-        elseif parameterTypes[i] == 1 # immediate mode
-            continue
-        elseif parameterTypes[i] == 2 # relative mode
-            parameters[i] = get!(intcode.program,intcode.relative_base+parameters[i],0)
-        end
-    end
+    parameters = [getmem(intcode, x, 0) for x ∈ collect(intcode.pointer+1:intcode.pointer+numParams)]
     intcode.pointer += numParams + 1
     if opcode == 1 # x+y
-        result = parameters[1] + parameters[2]
-        intcode.program[paramInstructions[3]] = result
+        result = getmem(intcode,parameters[1],parameterTypes[1]) + getmem(intcode,parameters[2],parameterTypes[2])
+        setmem!(intcode,result,parameters[3],parameterTypes[3])
     elseif opcode == 2 # x*y
-        result = parameters[1] * parameters[2]
-        intcode.program[paramInstructions[3]] = result
+        result = getmem(intcode,parameters[1],parameterTypes[1]) * getmem(intcode,parameters[2],parameterTypes[2])
+        setmem!(intcode,result,parameters[3],parameterTypes[3])
     elseif opcode == 3 # input
         if isempty(intcode.input_stream) # wait for input
             intcode.waiting = true
@@ -72,32 +87,32 @@ function nextstep!(intcode::Intcode)
             return intcode.finished
         else
             result = pop!(intcode.input_stream)
-            intcode.program[paramInstructions[1]] = result
+            setmem!(intcode,result,parameters[1],parameterTypes[1])
         end
     elseif opcode == 4 # output
-        pushfirst!(intcode.output_stream,parameters[1])
+        pushfirst!(intcode.output_stream,getmem(intcode,parameters[1],parameterTypes[1]))
     elseif opcode == 5 # jump-if-true
-        if parameters[1] != 0
-            intcode.pointer = parameters[2]
+        if getmem(intcode,parameters[1],parameterTypes[1]) != 0
+            intcode.pointer = getmem(intcode,parameters[2],parameterTypes[2])
         end
     elseif opcode == 6 # jump-if-false
-        if parameters[1] == 0
-            intcode.pointer = parameters[2]
+        if getmem(intcode,parameters[1],parameterTypes[1]) == 0
+            intcode.pointer = getmem(intcode,parameters[2],parameterTypes[2])
         end
     elseif opcode == 7 # less than
-        if parameters[1] < parameters[2]
-            intcode.program[paramInstructions[3]] = 1
+        if getmem(intcode,parameters[1],parameterTypes[1]) < getmem(intcode,parameters[2],parameterTypes[2])
+            setmem!(intcode,1,parameters[3],parameterTypes[3])
         else
-            intcode.program[paramInstructions[3]] = 0
+            setmem!(intcode,0,parameters[3],parameterTypes[3])
         end
     elseif opcode == 8 # equals
-        if parameters[1] == parameters[2]
-            intcode.program[paramInstructions[3]] = 1
+        if getmem(intcode,parameters[1],parameterTypes[1]) == getmem(intcode,parameters[2],parameterTypes[2])
+            setmem!(intcode,1,parameters[3],parameterTypes[3])
         else
-            intcode.program[paramInstructions[3]] = 0
+            setmem!(intcode,0,parameters[3],parameterTypes[3])
         end
     elseif opcode == 9 # adjust relative base
-        intcode.relative_base += parameters[1]
+        intcode.relative_base += getmem(intcode,parameters[1],parameterTypes[1])
     elseif opcode == 99 # finish
         intcode.finished = true
     end
@@ -112,4 +127,13 @@ function executeprogram!(intcode)
     return intcode.output_stream
 end
 
-getprogram(1,false) |> executeprogram!
+function part1()
+    return executeprogram!(getprogram(1))[1]
+end
+
+function part2()
+    return executeprogram!(getprogram(2))[1]
+end
+
+println("part 1: ", part1())
+println("part 2: ", part2())
