@@ -11,7 +11,7 @@ mutable struct Intcode
     function VectorToDict(program::Vector{Int})
         vector_dict = Dict{Int, Int}()
         for (i,v) ∈ enumerate(program)
-            vector_dict[i] = v
+            vector_dict[i-1] = v
         end
         return vector_dict
     end
@@ -43,28 +43,28 @@ end
 
 function nextstep!(intcode::Intcode)
     numParamsByOpcode = Dict(1 => 3, 2 => 3, 3 => 1, 4 => 1, 5 => 2, 6 => 2, 7 => 3, 8 => 3, 9 => 1, 99 => 0)
-    instruction = lpad(get!(intcode.program,intcode.pointer+1,0), 5, '0')
+    instruction = lpad(get!(intcode.program,intcode.pointer,0), 5, '0')
     opcode = parse(Int, instruction[4:5])
     numParams = numParamsByOpcode[opcode]
     parameterTypes = parse.(Int, collect(reverse(instruction[4-numParams:3])))
-    paramInstructions = [get!(intcode.program, x, 0) for x ∈ collect(intcode.pointer+2:intcode.pointer+1+numParams)]
+    paramInstructions = [get!(intcode.program, x, 0) for x ∈ collect(intcode.pointer+1:intcode.pointer+numParams)]
     parameters = copy(paramInstructions)
     for i ∈ 1:numParams
         if parameterTypes[i] == 0 # position mode
-            parameters[i] = get!(intcode.program,parameters[i]+1,0)
+            parameters[i] = get!(intcode.program,parameters[i],0)
         elseif parameterTypes[i] == 1 # immediate mode
             continue
         elseif parameterTypes[i] == 2 # relative mode
-            parameters[i] = get!(intcode.program,intcode.relative_base+parameters[i]+1,0)
+            parameters[i] = get!(intcode.program,intcode.relative_base+parameters[i],0)
         end
     end
     intcode.pointer += numParams + 1
     if opcode == 1 # x+y
         result = parameters[1] + parameters[2]
-        intcode.program[paramInstructions[3]+1] = result
+        intcode.program[paramInstructions[3]] = result
     elseif opcode == 2 # x*y
         result = parameters[1] * parameters[2]
-        intcode.program[paramInstructions[3]+1] = result
+        intcode.program[paramInstructions[3]] = result
     elseif opcode == 3 # input
         if isempty(intcode.input_stream) # wait for input
             intcode.waiting = true
@@ -72,7 +72,7 @@ function nextstep!(intcode::Intcode)
             return intcode.finished
         else
             result = pop!(intcode.input_stream)
-            intcode.program[paramInstructions[1]+1] = result
+            intcode.program[paramInstructions[1]] = result
         end
     elseif opcode == 4 # output
         pushfirst!(intcode.output_stream,parameters[1])
@@ -86,15 +86,15 @@ function nextstep!(intcode::Intcode)
         end
     elseif opcode == 7 # less than
         if parameters[1] < parameters[2]
-            intcode.program[paramInstructions[3]+1] = 1
+            intcode.program[paramInstructions[3]] = 1
         else
-            intcode.program[paramInstructions[3]+1] = 0
+            intcode.program[paramInstructions[3]] = 0
         end
     elseif opcode == 8 # equals
         if parameters[1] == parameters[2]
-            intcode.program[paramInstructions[3]+1] = 1
+            intcode.program[paramInstructions[3]] = 1
         else
-            intcode.program[paramInstructions[3]+1] = 0
+            intcode.program[paramInstructions[3]] = 0
         end
     elseif opcode == 9 # adjust relative base
         intcode.relative_base += parameters[1]
