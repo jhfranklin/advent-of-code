@@ -1,6 +1,6 @@
 using AdventOfCode
 mutable struct Intcode
-    program::Vector{Int}
+    program::Dict{Int, Int}
     pointer::Int
     finished::Bool
     input_stream::Vector{Int}
@@ -8,9 +8,17 @@ mutable struct Intcode
     waiting::Bool
     relative_base::Int
 
-    Intcode(program::Vector{Int}) = new(program, 0, false, [], [], false, 0)
-    Intcode(program::Vector{Int},input::Int) = new(program, 0, false, [input], [], false, 0)
-    Intcode(program::Vector{Int},input_stream::Vector{Int}) = new(program, 0, false, input_stream, [], false, 0)
+    function VectorToDict(program::Vector{Int})
+        vector_dict = Dict{Int, Int}()
+        for (i,v) ∈ enumerate(program)
+            vector_dict[i] = v
+        end
+        return vector_dict
+    end
+
+    Intcode(program::Vector{Int}) = new(VectorToDict(program), 0, false, [], [], false, 0)
+    Intcode(program::Vector{Int},input::Int) = new(VectorToDict(program), 0, false, [input], [], false, 0)
+    Intcode(program::Vector{Int},input_stream::Vector{Int}) = new(VectorToDict(program), 0, false, input_stream, [], false, 0)
 end
 
 finished(ic::Intcode) = ic.finished
@@ -21,7 +29,7 @@ function getprogram(sample=false)
     return Intcode(data)
 end
 
-function getprogram(input::Int=1,sample=false)
+function getprogram(input::Int,sample=false)
     rawInput = readline(getinputpath(2019, 9, sample))
     data = parse.(Int,split(rawInput, ","))
     return Intcode(data, input)
@@ -35,19 +43,19 @@ end
 
 function nextstep!(intcode::Intcode)
     numParamsByOpcode = Dict(1 => 3, 2 => 3, 3 => 1, 4 => 1, 5 => 2, 6 => 2, 7 => 3, 8 => 3, 9 => 1, 99 => 0)
-    instruction = lpad(intcode.program[intcode.pointer+1], 5, '0')
+    instruction = lpad(get!(intcode.program,intcode.pointer+1,0), 5, '0')
     opcode = parse(Int, instruction[4:5])
     numParams = numParamsByOpcode[opcode]
     parameterTypes = parse.(Int, collect(reverse(instruction[4-numParams:3])))
-    paramInstructions = intcode.program[intcode.pointer+2:intcode.pointer+1+numParams]
+    paramInstructions = [get!(intcode.program, x, 0) for x ∈ collect(intcode.pointer+2:intcode.pointer+1+numParams)]
     parameters = copy(paramInstructions)
     for i ∈ 1:numParams
         if parameterTypes[i] == 0 # position mode
-            parameters[i] = intcode.program[parameters[i]+1]
+            parameters[i] = get!(intcode.program,parameters[i]+1,0)
         elseif parameterTypes[i] == 1 # immediate mode
             continue
         elseif parameterTypes[i] == 2 # relative mode
-            parameters[i] = intcode.program[intcode.relative_base+parameters[i]+1]
+            parameters[i] = get!(intcode.program,intcode.relative_base+parameters[i]+1,0)
         end
     end
     intcode.pointer += numParams + 1
@@ -103,3 +111,5 @@ function executeprogram!(intcode)
     end
     return intcode.output_stream
 end
+
+getprogram(1,false) |> executeprogram!
