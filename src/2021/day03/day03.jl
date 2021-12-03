@@ -2,16 +2,6 @@ using AdventOfCode
 
 getinput(sample=false) = readlines(getinputpath(2021, 3, sample))
 
-function parseinput(input)
-    matrix = BitMatrix(undef,length(input),length(input[1]))
-    for (i,row) ∈ enumerate(input)
-        chars = collect(row)
-        bools = parse.(Bool, chars)
-        matrix[i,:] = bools
-    end
-    return matrix
-end
-
 function part1()
     binary_nums = getinput()
     num_nums = length(binary_nums)
