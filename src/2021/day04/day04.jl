@@ -11,14 +11,14 @@ end
 function parseinput(input)
     board_size = 5
     draws = parse.(Int,split(input[1],","))
-    num_boards = (length(input) - 1) ÷ 6
+    num_boards = (length(input)-1) ÷ (board_size+1)
     boards = Vector{Board}()
     for i ∈ 1:num_boards
         start_row = 3 + 6*(i-1)
         end_row = start_row + (board_size-1)
         rows = input[start_row:end_row] .|> split .|> x->parse.(Int,x)
         grid = hcat(rows...) |> permutedims
-        board = Board(grid, zeros(Bool, 5, 5), false)
+        board = Board(grid, zeros(Bool, board_size, board_size), false)
         push!(boards, board)
     end
     return draws, boards
@@ -43,7 +43,6 @@ function part1()
             end
         end
     end
-    # get score
 end
 
 function part2()
@@ -61,7 +60,6 @@ function part2()
                 end
             end
         end
-        # remove winning boards
         boards = [b for b ∈ boards if !b.win]
     end
 end
