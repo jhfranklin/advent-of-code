@@ -7,7 +7,7 @@ sig1←{⊃(2=≢¨⍵)/⍵}
 sig4←{⊃(4=≢¨⍵)/⍵}
 sig1intersect←{(≢∩∘(sig1 ⍵))¨⍵}
 sig4intersect←{(≢∩∘(sig4 ⍵))¨⍵}
-id←{⊃×⌿(≢¨⍵)({(≢∩∘(sig1 ⍵))¨⍵}⍵)({(≢∩∘(sig4 ⍵))¨⍵}⍵)}
+id←{⊃×⌿(≢¨⍵)(sig1intersect ⍵)(sig4intersect ⍵)}
 getdigit←{¯1+(⍳10)+.×36 8 10 30 32 15 18 12 56 48∘.=id ⍵}
 values←(⊂∘⍋⌷⊢)¨¯4↑' '∘(≠⊆⊢)
 getoutput←{10⊥(getdigit sortsignals ⍵)+.×⍨(values∘.≡sortsignals)⍵}
