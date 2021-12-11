@@ -6,5 +6,5 @@ step←(flash⍣≡)1∘+
 zeroes←+/(,0∘=)
 turn←{ ((⊃⍵)+zeroes next),⊂next←step ⊃2⌷⍵}
 
-(turn⍣100) 0,⊂grid ⍝ Part 1
-
+⊃(turn⍣100) 0,⊂grid ⍝ Part 1
+0{0=+/,⍵ : ⍺ ⋄ (⍺+1)∇step ⍵}grid
