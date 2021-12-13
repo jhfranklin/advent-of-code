@@ -10,7 +10,6 @@ end
 
 import Base.+
 +(a::HexPoint, b::HexPoint) = HexPoint(a.x + b.x, a.y + b.y, a.z + b.z)
-manhattandistance(a::HexPoint) = max(abs(a.x), abs(a.y), abs(a.z))
 
 directions = Dict{String, HexPoint}(
     "ne" => HexPoint(1, 0, -1),
@@ -20,6 +19,27 @@ directions = Dict{String, HexPoint}(
     "w" => HexPoint(-1, 1, 0),
     "nw" => HexPoint(0, 1, -1)
 )
+
+neighbours(x::HexPoint) = [x + dir for dir ∈ values(directions)]
+
+function numblacktiles(grid, x)
+    num_black_tiles = 0
+    for tile ∈ neighbours(x)
+        num_black_tiles += get(grid, tile, false)
+    end
+    return num_black_tiles
+end
+
+function extendgrid!(grid)
+    start = keys(grid)
+    for point ∈ start
+        for n ∈ neighbours(point)
+            if !haskey(grid,n) && (numblacktiles(grid,n) > 0)
+                grid[n] = false
+            end
+        end
+    end
+end
 
 function parserow(row)
     em = eachmatch(r"(e|se|sw|w|nw|ne)", row)
@@ -40,15 +60,27 @@ end
 function part2()
     finalPoints = getinput() .|> parserow .|> sum
     # get initial black tiles
-    initialBlackTiles = Dict{HexPoint, Bool}()
+    grid = Dict{HexPoint, Bool}()
     for point in finalPoints
-        tile = get(initialBlackTiles, point, false)
-        initialBlackTiles[point] = !tile
+        tile = get(grid, point, false)
+        grid[point] = !tile
     end
-    # current grid size
-    maxDistance = maximum(manhattandistance.(finalPoints))
-
-    return maxDistance
+    for day ∈ 1:100
+        extendgrid!(grid)
+        step = Dict{HexPoint, Bool}()
+        for (k,v) ∈ grid
+            n = numblacktiles(grid,k)
+            if v # black tile
+                step[k] = (n == 0) || (n > 2)
+            else # white tile
+                step[k] = (n == 2)
+            end
+        end
+        for (k,v) ∈ step
+            grid[k] = (grid[k] ⊻ v)
+        end
+    end
+    return sum(values(grid))
 end
 
 println("part 1: ", part1())
