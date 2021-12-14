@@ -22,11 +22,11 @@ function answer(steps)
     end
     for _ ∈ 1:steps
         newcounter = copy(counter)
-        for k ∈ keys(counter)
+        for (k,v) ∈ counter
             insertion = mapper[k]
             left = k[1] * insertion
             right = insertion * k[2]
-            num_insertions = counter[k]
+            num_insertions = v
             newcounter[k] -= num_insertions
             newcounter[left] = get!(newcounter,left,0) + num_insertions
             newcounter[right] = get!(newcounter,right,0) + num_insertions
@@ -34,22 +34,12 @@ function answer(steps)
         counter = newcounter
     end
     elementcounts = Dict{Char,Int}()
-    for k ∈ keys(counter)
-        left,right = collect(k)
-        elementcounts[left] = get!(elementcounts,left,0) + counter[k]
-        elementcounts[right] = get!(elementcounts,right,0) + counter[k]
+    for (k,v) ∈ counter
+        element = k[2]
+        elementcounts[element] = get!(elementcounts,element,0) + v
     end
     first_element = template[1]
-    last_element = template[end]
-    for elt ∈ keys(elementcounts)
-        if elt == first_element && (elt == last_element)
-            elementcounts[elt] = (elementcounts[elt]+2) ÷ 2
-        elseif elt == first_element || (elt == last_element)
-            elementcounts[elt] = (elementcounts[elt]+1) ÷ 2
-        else
-            elementcounts[elt] ÷= 2
-        end
-    end
+    elementcounts[first_element] = get!(elementcounts,first_element,0) + 1
     return maximum(values(elementcounts)) - minimum(values(elementcounts))
 end
 
