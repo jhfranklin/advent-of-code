@@ -193,11 +193,6 @@ function part2()
         end
     end
 end
-#part1()
-part2()
 
-# for i ∈ part2()[1,:]
-#     println(i.id)
-#     println(reverse(i.tile[:,1]))
-#     println(i.tile[:,end])
-# end
+println("part 1: ", part1())
+println("part 2: ", part2())
