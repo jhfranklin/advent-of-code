@@ -6,22 +6,19 @@ const ∞ = typemax(Int)
 const di = CartesianIndex(1,0)
 const dj = CartesianIndex(0,1)
 
-
 function dijkstra(grid)
     source = CartesianIndex(1,1)
     grid_size = size(grid)
     target = CartesianIndex(grid_size...)
     unvisited = Set(CartesianIndices(grid))
-    distance = ones(Int,grid_size...) * ∞
-    #previous = Dict{CartesianIndex{2},CartesianIndex{2}}()
+    distance = Dict{CartesianIndex{2},Int}()
     distance[source] = 0
     while length(unvisited) > 0
-        println(length(unvisited))
         cur_min = ∞
         u = CartesianIndex(0,0)
         for node ∈ unvisited
-            if distance[node] < cur_min
-                cur_min = distance[node]
+            if get(distance,node,∞) < cur_min
+                cur_min = get(distance,node,∞)
                 u = node
             end
         end
@@ -32,10 +29,9 @@ function dijkstra(grid)
         end
         for v ∈ neighbours
             if v ∈ unvisited
-                alternative = distance[u] + grid[v]
-                if alternative < distance[v]
+                alternative = get(distance,u,∞) + grid[v]
+                if alternative < get(distance,v,∞)
                     distance[v] = alternative
-                    #previous[v] = u
                 end
             end
         end
@@ -45,7 +41,7 @@ end
 
 function part1()
     grid = getinput()
-    return dijkstra(grid)[end,end]
+    return dijkstra(grid)[CartesianIndex(100,100)]
 end
 
 function part2()
@@ -60,8 +56,8 @@ function part2()
         grid = vcat(grid, (r-1) .+ row)
     end
     wrapped_grid = mod1.(grid,9)
-    return dijkstra(wrapped_grid)[end,end]
+    return dijkstra(wrapped_grid)[CartesianIndex(500,500)]
 end
 
-part1()
-part2()
+println("part 1: ", part1())
+println("part 2: ", part2())
