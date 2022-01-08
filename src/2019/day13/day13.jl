@@ -169,4 +169,4 @@ function part2()
 end
 
 println("part 1: ", part1())
-println("part 1: ", part2())
+println("part 2: ", part2())
