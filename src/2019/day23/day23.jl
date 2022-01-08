@@ -158,4 +158,59 @@ function part1()
     return network
 end
 
-part1()
+function networkidle(network::Vector{Intcode})
+    return all([isempty(ic.input_stream) for ic ∈ network])
+end
+
+function part2()
+    network = Vector{Intcode}(undef, 50)
+    NAT = Dict{Symbol,Int}(
+        :X => 0,
+        :Y => 0
+    )
+    for address ∈ 0:49
+        network[address+1] = getprogram([-1,address])
+    end
+    # Boot computers
+    for ic ∈ network
+        executeprogram!(ic)
+    end
+    # Loop through network
+    current_address = 0
+    NAT_delivered_values = Set{Int}()
+    while true
+        if networkidle(network)
+            pushfirst!(network[1].input_stream, NAT[:X])
+            pushfirst!(network[1].input_stream, NAT[:Y])
+            if NAT[:Y] ∈ NAT_delivered_values
+                return NAT[:Y]
+            else
+                push!(NAT_delivered_values,NAT[:Y])
+            end
+            current_address = 0
+        end
+        ic = network[current_address+1]
+        if isempty(ic.input_stream)
+            push!(ic.input_stream,-1)
+        end
+        output_stream = executeprogram!(ic)
+        while !isempty(output_stream)
+            receiver_address = pop!(output_stream)
+            packet_x = pop!(output_stream)
+            packet_y = pop!(output_stream)
+            if receiver_address == 255
+                NAT[:X] = packet_x
+                NAT[:Y] = packet_y
+            else
+                receiver = network[receiver_address+1]
+                pushfirst!(receiver.input_stream, packet_x)
+                pushfirst!(receiver.input_stream, packet_y)
+            end
+        end
+        current_address = mod(current_address+1, 50)
+    end
+    return network
+end
+
+println("part 1: ", part1())
+println("part 2: ", part2())
